@@ -51,6 +51,7 @@ function BudgetLineInput({
 export default function BudgetBuilderPage() {
   const { budget, loading, updateLineItem, lastSavedAt } = useBudget();
   const [scope, setScope] = useState<BudgetScope>("cattle");
+  const [showCategoryNote, setShowCategoryNote] = useState(false);
 
   const scopeLabel =
     scope === "company"
@@ -81,11 +82,38 @@ export default function BudgetBuilderPage() {
       <EnterpriseTabs value={scope} onChange={setScope} />
 
       <div className="card">
-        <div className="card-title">{scopeLabel} — season targets</div>
+        <div className="card-title">
+          {scopeLabel} — season targets
+          <button
+            type="button"
+            className="info-toggle"
+            aria-label="Why is the category list fixed?"
+            onClick={() => setShowCategoryNote((v) => !v)}
+          >
+            i
+          </button>
+        </div>
         <div className="card-sub">
           Jan 1 – Dec 31, 2026 · enter a full-season target for each category
           that applies here
         </div>
+
+        {showCategoryNote && (
+          <div className="info-note">
+            <strong>Why isn&rsquo;t there an &ldquo;add category&rdquo; button?</strong>{" "}
+            Categories here are read from the farm&rsquo;s chart of accounts,
+            not managed separately by this tool. Ambrook already has a
+            dedicated Custom Chart of Accounts feature for defining
+            categories — if the budget builder also let you invent new ones
+            here, the two lists could drift out of sync (a category created
+            in a budget that never shows up in real bookkeeping, or vice
+            versa). So this screen is deliberately downstream of the chart
+            of accounts, never a second source of truth for it. In this
+            prototype, <code>lib/mockData.ts</code> stands in for that real,
+            connected chart of accounts — a static list here is a limitation
+            of using mock data, not a missing feature.
+          </div>
+        )}
 
         {categories.map((cat) => {
           const existing = budget.lineItems.find(
@@ -133,10 +161,12 @@ export default function BudgetBuilderPage() {
         structurally separate from transaction data — never merged into the
         ledger — so forecasted numbers can never distort actual bookkeeping
         or reporting, the same constraint Ambrook&rsquo;s own support docs
-        call out for the current spreadsheet-based workaround. A shipped
-        version would swap the storage layer for Ambrook&rsquo;s actual
-        PostgreSQL data layer; the API shape and the ledger-separation rule
-        would stay the same.
+        call out for the current spreadsheet-based workaround. In
+        production this is backed by Postgres; locally it falls back to a
+        JSON file so the project needs no database setup to run — a real
+        integration with Ambrook&rsquo;s own data layer would keep the same
+        API shape and ledger-separation rule, just swap
+        <code>lib/budgetStore.ts</code> for one talking to their schema.
       </p>
     </>
   );
